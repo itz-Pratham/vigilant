@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local environment — DO NOT COMMIT (contains real secrets)
+.env
+
+# vigilant local databases and config (per-machine, not per-repo)
+~/.vigilant/
+
+# SQLite databases (if accidentally created in project root)
+*.db
+*.db-shm
+*.db-wal
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp

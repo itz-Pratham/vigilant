@@ -1,0 +1,44 @@
+{
+  "name": "vigilant",
+  "version": "0.1.0",
+  "description": "Autonomous GitHub code guardian — watches repos, finds issues, writes fixes, opens PRs.",
+  "keywords": ["cli", "ai", "github", "code-quality", "autonomous-agent"],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "vigilant": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "knowledge"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build":          "tsc",
+    "dev":            "tsx watch src/bin.ts",
+    "prepublishOnly": "npm run build",
+    "typecheck":      "tsc --noEmit",
+    "lint":           "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@juspay/neurolink":          "latest",
+    "@modelcontextprotocol/sdk":  "latest",
+    "@octokit/rest":              "^20.0.0",
+    "better-sqlite3":             "^9.0.0",
+    "chalk":                      "^5.0.0",
+    "cli-table3":                 "^0.6.5",
+    "commander":                  "^12.0.0",
+    "date-fns":                   "^3.0.0",
+    "dotenv":                     "^16.0.0",
+    "inquirer":                   "^9.0.0",
+    "minimatch":                  "^9.0.0",
+    "ora":                        "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3":      "^7.6.0",
+    "@types/inquirer":            "^9.0.0",
+    "@types/minimatch":           "^5.1.0",
+    "@types/node":                "^20.0.0",
+    "tsx":                        "^4.0.0",
+    "typescript":                 "^5.4.0"
+  }
+}

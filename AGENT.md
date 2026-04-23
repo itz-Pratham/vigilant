@@ -20,6 +20,14 @@ Pluggable domain packs (payments, security, reliability, compliance) make it rel
 
 ---
 
+## MANDATORY: AI Collaboration Rules
+
+1. **The AI (Copilot / Claude / any agent) must never `git commit` or `git push`** — it may create files, edit files, and `git add` (stage) changes, but committing and pushing is always the developer's responsibility
+2. **The AI must not run `npm publish` or any deployment command** without explicit instruction from the developer
+3. Before making any multi-file change, the AI must state its plan and wait for acknowledgement
+
+---
+
 ## MANDATORY: Plan Before Code
 
 No code may be written without a corresponding plan file existing first.
@@ -197,7 +205,9 @@ vigilant/
 
 ## Environment / Config Keys
 
-Stored in `~/.vigilant/config.json` with mode `0o600`. Never in `.env` files.
+Stored in `~/.vigilant/config.json` with mode `0o600`.
+`VIGILANT_*` environment variables (set via `.env` or shell) override the config file at runtime — env vars always take precedence.
+`.env` is gitignored. `.env.example` documents all variable names and is committed.
 
 | Key | Required | Description |
 |---|---|---|
