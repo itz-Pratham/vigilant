@@ -65,4 +65,6 @@ export type DetectedIssue = {
   sourceRef:   string;
   evidence:    string[];
   description: string;
+  /** ISO timestamp when the scanner detected this issue */
+  detectedAt:  string;
 };

@@ -25,6 +25,17 @@ Pluggable domain packs (payments, security, reliability, compliance) make it rel
 1. **The AI (Copilot / Claude / any agent) must never `git commit` or `git push`** — it may create files, edit files, and `git add` (stage) changes, but committing and pushing is always the developer's responsibility
 2. **The AI must not run `npm publish` or any deployment command** without explicit instruction from the developer
 3. Before making any multi-file change, the AI must state its plan and wait for acknowledgement
+4. **After completing each phase**, when the work is staged and ready to push, the AI must always provide a commit message in the following format:
+
+```
+feat(phase-N): <one-line summary>
+
+- <bullet 1>
+- <bullet 2>
+- ...
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+```
 
 ---
 

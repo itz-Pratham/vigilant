@@ -43,6 +43,7 @@ export const DEFAULT_WATCH_INTERVAL_SECONDS      = 60;
 export const PR_SCAN_PER_PAGE                    = 30;
 export const COMMIT_SCAN_PER_PAGE                = 20;
 export const PATTERN_SCAN_MIN_INTERVAL_SECONDS   = 300;
+export const WATCHER_POLL_INTERVAL_SECONDS        = 60;
 
 // ── Agent loop ────────────────────────────────────────────────────────────────
 
@@ -66,3 +67,13 @@ export const MCP_DEFAULT_PORT = 3741;
 // ── Learner ───────────────────────────────────────────────────────────────────
 
 export const LEARNER_IDLE_TICKS_TRIGGER = 10;
+
+// ── Tool Observer ─────────────────────────────────────────────────────────────
+
+/** GitHub usernames of known review-bot accounts that vigilant reads findings from. */
+export const TOOL_BOT_USERNAMES: Record<string, 'snyk' | 'coderabbit' | 'dependabot' | 'github_security'> = {
+  'snyk-bot':                      'snyk',
+  'coderabbitai[bot]':             'coderabbit',
+  'dependabot[bot]':               'dependabot',
+  'github-advanced-security[bot]': 'github_security',
+};

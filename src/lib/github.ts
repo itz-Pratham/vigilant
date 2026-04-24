@@ -45,27 +45,47 @@ export async function githubRequest<T>(
 }
 
 /**
- * Conditional GET using ETag for cache efficiency.
- * Returns null if GitHub says 304 Not Modified — caller should skip processing.
+ * Conditional GET using ETag. Returns null if GitHub returns 304 Not Modified.
+ * Handles rate limits with one automatic retry.
+ *
+ * @param fn  Function receiving (octokit, extraHeaders) — must return the full Octokit response
+ *            (not just data) so we can read the ETag from response.headers.
  */
 export async function conditionalGet<T>(params: {
-  octokitFn: (headers: Record<string, string>) => Promise<{ data: T; headers: Record<string, string> }>;
+  fn: (
+    octokit: Octokit,
+    extraHeaders: Record<string, string>,
+  ) => Promise<{ data: T; headers: Record<string, string | number | undefined>; status: number }>;
   lastEtag: string | null;
   context?: string;
 }): Promise<{ data: T; etag: string } | null> {
-  const headers: Record<string, string> = {};
-  if (params.lastEtag) headers['If-None-Match'] = params.lastEtag;
+  const octokit = getGitHub();
+  const extraHeaders: Record<string, string> = {};
+  if (params.lastEtag) extraHeaders['If-None-Match'] = params.lastEtag;
+
+  const attempt = async () => params.fn(octokit, extraHeaders);
 
   try {
-    const response = await params.octokitFn(headers);
-    const newEtag  = (response.headers['etag'] as string) ?? '';
-    return { data: response.data, etag: newEtag };
+    const response = await attempt();
+    if (response.status === 304) return null;
+    const etag = String(response.headers['etag'] ?? '');
+    return { data: response.data, etag };
   } catch (err: unknown) {
-    if (
-      typeof err === 'object' && err !== null && 'status' in err &&
-      (err as { status: number }).status === 304
-    ) {
-      return null;
+    const status = (err as { status?: number }).status;
+    if (status === 304) return null;
+    if (isRateLimitError(err)) {
+      const retryAfter = extractRetryAfter(err);
+      warn(`Rate limited. Backing off ${retryAfter}s`, params.context ?? 'daemon');
+      await sleep(retryAfter * 1000);
+      try {
+        const response = await attempt();
+        if (response.status === 304) return null;
+        const etag = String(response.headers['etag'] ?? '');
+        return { data: response.data, etag };
+      } catch (retryErr: unknown) {
+        if ((retryErr as { status?: number }).status === 304) return null;
+        throw retryErr;
+      }
     }
     throw err;
   }
