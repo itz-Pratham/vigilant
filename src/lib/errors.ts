@@ -59,6 +59,22 @@ export class DatabaseError extends VigilantError {
   }
 }
 
+/** Agentic loop stalled — no goalProgress for STALL_THRESHOLD consecutive iterations. */
+export class AgentLoopError extends VigilantError {
+  constructor(message: string, public readonly sessionId: string) {
+    super(message);
+    this.name = 'AgentLoopError';
+  }
+}
+
+/** A specific tool call failed during agent investigation. */
+export class ToolExecutionError extends VigilantError {
+  constructor(message: string, public readonly toolName: string) {
+    super(message);
+    this.name = 'ToolExecutionError';
+  }
+}
+
 /** Executor step failed (branch create, file write, PR create, CI poll). */
 export class ExecutorError extends VigilantError {
   constructor(

@@ -39,7 +39,7 @@ export type IssueSession = {
   goalProgress:     number;
   keyFindings:      string[];
   dataCollected:    Record<string, unknown>;
-  plan:             Record<string, unknown> | null;
+  plan:             Plan | null;
   branchName:       string | null;
   prNumber:         number | null;
   prUrl:            string | null;
@@ -52,6 +52,34 @@ export type IssueSession = {
   runNumber:        number;
   createdAt:        string;
   updatedAt:        string;
+};
+
+// ── Plan types (Phase 3) ──────────────────────────────────────────────────────
+
+/** A single file change produced by the agent's plan generator. */
+export type FileChange = {
+  /** Repo-relative file path, e.g. "src/checkout/payment.ts" */
+  path:         string;
+  description:  string;
+  /** Exact code being replaced — empty string for purely additive changes */
+  before:       string;
+  /** Exact replacement code */
+  after:        string;
+  lineHint?:    number;
+  isNewFile?:   boolean;
+};
+
+/** The structured fix plan produced after investigation. Shown at Gate 1. */
+export type Plan = {
+  summary:          string;
+  severity:         IssueSeverity;
+  confidence:       number;
+  rootCause:        string;
+  changes:          FileChange[];
+  branchName:       string;
+  prTitle:          string;
+  prBodyMarkdown:   string;
+  testSuggestions:  string[];
 };
 
 /** A pattern or issue detected by a watcher scanner. */

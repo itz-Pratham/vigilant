@@ -212,22 +212,15 @@ async function runTick(params: {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function resumeInterruptedSessions(): Promise<void> {
-  const interruptedStages: string[] = [
-    STAGE.INVESTIGATING,
-    STAGE.PLANNING,
-    STAGE.EXECUTING,
-    STAGE.AWAITING_SELF_REVIEW,
-    STAGE.SELF_REVIEWING,
-  ];
-
-  for (const stage of interruptedStages) {
-    const sessions = listSessionsByStage(stage);
-    for (const session of sessions) {
-      info(`Resuming interrupted session ${session.sessionId} (stage: ${session.stage})`, 'daemon');
-      resumeSession(session.sessionId).catch(err =>
-        logError(`Failed to resume session ${session.sessionId}`, 'daemon', err),
-      );
-    }
+  // Only auto-resume `investigating` sessions.
+  // Other stages (planning, executing, self_reviewing, etc.) require their own
+  // phase handlers which are not yet implemented — they are left for later phases.
+  const sessions = listSessionsByStage(STAGE.INVESTIGATING);
+  for (const session of sessions) {
+    info(`Resuming interrupted session ${session.sessionId} (stage: investigating)`, 'daemon');
+    resumeSession(session.sessionId).catch(err =>
+      logError(`Failed to resume session ${session.sessionId}`, 'daemon', err),
+    );
   }
 }
 

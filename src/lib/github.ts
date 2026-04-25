@@ -11,7 +11,16 @@ let _octokit: Octokit | null = null;
 export function getGitHub(): Octokit {
   if (_octokit) return _octokit;
   const config = loadConfig();
-  _octokit = new Octokit({ auth: config.githubToken });
+  _octokit = new Octokit({
+    auth: config.githubToken,
+    // Suppress noisy deprecation notices printed by @octokit/request to stdout
+    log: {
+      debug: () => {},
+      info:  () => {},
+      warn:  (msg: string) => { if (!msg.includes('deprecated')) warn(msg, 'octokit'); },
+      error: console.error,
+    },
+  });
   return _octokit;
 }
 

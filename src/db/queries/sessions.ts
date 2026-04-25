@@ -1,6 +1,6 @@
 // src/db/queries/sessions.ts
 
-import type { IssueSession } from '../../agent/types.js';
+import type { IssueSession, Plan } from '../../agent/types.js';
 import { getStateDb } from '../index.js';
 
 // ── Public query API ──────────────────────────────────────────────────────────
@@ -82,7 +82,8 @@ export function activeSessionExists(
   sourceRef: string,
 ): boolean {
   const db             = getStateDb();
-  const terminalStages = ['merged', 'skipped', 'closed'];
+  // blocked sessions are NOT counted as "active" — the watcher may create a new session to retry
+  const terminalStages = ['merged', 'skipped', 'closed', 'blocked'];
   const placeholders   = terminalStages.map(() => '?').join(',');
   const result         = db.prepare(`
     SELECT COUNT(*) as count FROM agent_sessions
@@ -156,7 +157,7 @@ function rowToSession(row: Record<string, unknown>): IssueSession {
     goalProgress:    row['goal_progress']     as number,
     keyFindings:     JSON.parse(row['key_findings']  as string) as string[],
     dataCollected:   JSON.parse(row['data_collected'] as string) as Record<string, unknown>,
-    plan:            row['plan'] ? JSON.parse(row['plan'] as string) as Record<string, unknown> : null,
+    plan:            row['plan'] ? JSON.parse(row['plan'] as string) as Plan : null,
     branchName:      row['branch_name']       as string | null,
     prNumber:        row['pr_number']         as number | null,
     prUrl:           row['pr_url']            as string | null,

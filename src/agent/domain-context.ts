@@ -5,6 +5,19 @@
 import type { PatternRule } from '../watcher/types.js';
 import type { VigilantConfig } from '../config/types.js';
 
+/**
+ * A fix strategy gives the agent example before/after code and investigation hints
+ * for a specific issue type. Injected into the investigation system prompt.
+ */
+export type FixStrategy = {
+  issueType:          string;
+  explanation:        string;
+  exampleBefore:      string;
+  exampleAfter:       string;
+  investigationHints: string[];
+  priorityFiles:      string[];
+};
+
 /** A domain pack: defines what vigilant looks for in a specific domain. */
 export type DomainPack = {
   /** Unique domain identifier, e.g. "payments" */
@@ -17,6 +30,8 @@ export type DomainPack = {
   patternRules: PatternRule[];
   /** Job name keywords used by the CI scanner */
   ciKeywords: string[];
+  /** Fix strategies keyed by issueType — injected into agent system prompt */
+  fixStrategies: Record<string, FixStrategy>;
 };
 
 // ── Built-in domain packs ─────────────────────────────────────────────────────
@@ -75,6 +90,56 @@ const PAYMENTS_PACK: DomainPack = {
       watchedFilePaths: ['**/payment*', '**/checkout*'],
     },
   ],
+  fixStrategies: {
+    MISSING_IDEMPOTENCY_KEY: {
+      issueType: 'MISSING_IDEMPOTENCY_KEY',
+      explanation: 'Every payment API call must include an idempotency key to prevent duplicate charges on retries.',
+      exampleBefore: `const result = await stripe.paymentIntents.create({ amount, currency });`,
+      exampleAfter: `const result = await stripe.paymentIntents.create({ amount, currency }, { idempotencyKey: requestId });`,
+      investigationHints: [
+        'Find all files calling createPayment, processPayment, charge, or paymentIntents.create',
+        'Check whether a request-id header or uuid is available in scope',
+        'Look for existing idempotency patterns elsewhere in the codebase',
+      ],
+      priorityFiles: ['**/payment*', '**/checkout*', '**/order*', '**/billing*'],
+    },
+    UNVERIFIED_WEBHOOK: {
+      issueType: 'UNVERIFIED_WEBHOOK',
+      explanation: 'Webhook endpoints must verify the provider signature before processing the payload to prevent spoofed events.',
+      exampleBefore: `app.post('/webhook', (req, res) => { handleEvent(req.body); });`,
+      exampleAfter: `app.post('/webhook', (req, res) => { const event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], secret); handleEvent(event); });`,
+      investigationHints: [
+        'Identify all webhook receiver routes',
+        'Check if raw body is preserved (required for HMAC verification)',
+        'Find the webhook secret location (env var vs hardcoded)',
+      ],
+      priorityFiles: ['**/webhook*', '**/hooks*'],
+    },
+    SILENT_PAYMENT_ERROR: {
+      issueType: 'SILENT_PAYMENT_ERROR',
+      explanation: 'Caught payment errors must be rethrown or alerted — silently swallowing them hides outages.',
+      exampleBefore: `try { await charge(amount); } catch (e) { /* ignore */ }`,
+      exampleAfter: `try { await charge(amount); } catch (e) { logger.error('charge failed', { e }); throw e; }`,
+      investigationHints: [
+        'Find all try/catch blocks in payment files',
+        'Check what error handling utilities exist in the codebase',
+        'Look for monitoring/alert integrations already in use',
+      ],
+      priorityFiles: ['**/payment*', '**/checkout*'],
+    },
+    RETRYING_TERMINAL_ERROR: {
+      issueType: 'RETRYING_TERMINAL_ERROR',
+      explanation: 'Terminal error codes like card_declined or do_not_honor must not be retried — they will always fail.',
+      exampleBefore: `while (retries > 0) { try { return await charge(); } catch(e) { retries--; } }`,
+      exampleAfter: `const TERMINAL_CODES = ['card_declined','do_not_honor','insufficient_funds'];\nif (TERMINAL_CODES.includes(e.code)) throw e;\n// only retry transient errors`,
+      investigationHints: [
+        'Find the retry loop and the error codes being handled',
+        'Check Stripe/payment provider docs for terminal vs transient error codes',
+        'Look for an existing error-code enum or constant file',
+      ],
+      priorityFiles: ['**/payment*', '**/checkout*', '**/retry*'],
+    },
+  },
 };
 
 const SECURITY_PACK: DomainPack = {
@@ -104,6 +169,7 @@ const SECURITY_PACK: DomainPack = {
       watchedFilePaths: ['**/routes*', '**/controllers*', '**/api*'],
     },
   ],
+  fixStrategies: {},
 };
 
 const RELIABILITY_PACK: DomainPack = {
@@ -123,6 +189,7 @@ const RELIABILITY_PACK: DomainPack = {
       watchedFilePaths: ['**/api*', '**/client*', '**/service*'],
     },
   ],
+  fixStrategies: {},
 };
 
 const COMPLIANCE_PACK: DomainPack = {
@@ -141,6 +208,7 @@ const COMPLIANCE_PACK: DomainPack = {
       watchedFilePaths: ['**/*.ts', '**/*.js'],
     },
   ],
+  fixStrategies: {},
 };
 
 const ALL_PACKS: Record<string, DomainPack> = {
@@ -171,4 +239,45 @@ export function resolveCIIssueType(issueType: string, pack: DomainPack): string 
   if (issueType !== 'CI_DOMAIN_FAILURE') return issueType;
   const ciType = pack.issueTypes.find(t => t.startsWith('CI_'));
   return ciType ?? 'CI_DOMAIN_FAILURE';
+}
+
+/**
+ * Find the domain pack that owns a given issueType.
+ * Used by the agent to pick the right pack when resuming a session.
+ */
+export function findPackForIssueType(issueType: string): DomainPack | undefined {
+  return Object.values(ALL_PACKS).find(p => p.issueTypes.includes(issueType));
+}
+
+/**
+ * Build a markdown block describing the domain context for the agent system prompt.
+ * Includes issue type, explanation, before/after example, and investigation hints.
+ */
+export function buildDomainPromptBlock(pack: DomainPack, issueType: string): string {
+  const strategy = pack.fixStrategies[issueType];
+  if (!strategy) {
+    return `## Domain: ${pack.name}\nIssue type: ${issueType}\n`;
+  }
+
+  return [
+    `## Domain: ${pack.name}`,
+    `### Issue: ${issueType}`,
+    strategy.explanation,
+    '',
+    '**Bad pattern (before):**',
+    '```',
+    strategy.exampleBefore,
+    '```',
+    '',
+    '**Fixed pattern (after):**',
+    '```',
+    strategy.exampleAfter,
+    '```',
+    '',
+    '### Investigation hints',
+    ...strategy.investigationHints.map(h => `- ${h}`),
+    '',
+    `### Priority files to examine`,
+    ...strategy.priorityFiles.map(f => `- \`${f}\``),
+  ].join('\n');
 }
