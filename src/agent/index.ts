@@ -105,10 +105,13 @@ export async function startAgentSession(
     return session;
   }
 
-  // If investigation succeeded, generate the plan
+  // If investigation succeeded, generate the plan and advance to Gate 1
   if (session.stage === STAGE.INVESTIGATING && session.goalProgress >= 0.7) {
     try {
       await generatePlan(session, pack, config);
+      // Plan generation sets stage = PLANNING; advance to gate
+      session.stage = STAGE.AWAITING_APPROVAL;
+      saveSession(session);
     } catch (err) {
       warn(`Plan generation failed for ${sessionId}: ${err instanceof Error ? err.message : String(err)}`, 'agent');
       session.stage         = STAGE.BLOCKED;
@@ -165,6 +168,8 @@ export async function resumeSession(sessionId: string): Promise<void> {
   if (session.stage === STAGE.INVESTIGATING && session.goalProgress >= 0.7) {
     try {
       await generatePlan(session, pack, config);
+      session.stage = STAGE.AWAITING_APPROVAL;
+      saveSession(session);
     } catch (err) {
       warn(`Plan generation failed on resume for ${sessionId}`, 'agent');
       session.stage         = STAGE.BLOCKED;

@@ -8,6 +8,7 @@ import { getWatcherState, upsertWatcherState } from '../db/queries/watcher.js';
 import { activeSessionExists, listSessionsByStage } from '../db/queries/sessions.js';
 import { resolveActivePacks } from '../agent/domain-context.js';
 import { startAgentSession, resumeSession } from '../agent/index.js';
+import { enqueueGate, reQueuePendingGates } from '../hitl/index.js';
 import { info, warn, error as logError, debug } from '../lib/logger.js';
 import {
   WATCHER_POLL_INTERVAL_SECONDS,
@@ -56,6 +57,8 @@ export async function startDaemon(opts: {
 
   // Resume any interrupted sessions from a previous run
   await resumeInterruptedSessions();
+  // Re-queue sessions that were at a gate when the daemon last stopped
+  reQueuePendingGates();
 
   running = true;
 
@@ -186,7 +189,11 @@ async function runTick(params: {
 
     // Fire-and-forget: agent session is fully async, errors caught here
     startAgentSession(issue, activePacks, config, relevantToolFindings)
-      .then(() => { /* Phase 3: session continues asynchronously */ })
+      .then(session => {
+        if (session?.stage === STAGE.AWAITING_APPROVAL) {
+          enqueueGate(session.sessionId, 1);
+        }
+      })
       .catch(err => logError(`Agent session failed for ${issue.issueType}`, 'daemon', err));
 
     newSessionsStarted++;

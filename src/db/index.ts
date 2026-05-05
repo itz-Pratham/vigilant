@@ -93,11 +93,23 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_topic
 let _stateDb:     Database.Database | null = null;
 let _knowledgeDb: Database.Database | null = null;
 
+function resolveStatePath(): string {
+  return process.env['VIGILANT_STATE_DB_PATH'] ?? STATE_DB_PATH;
+}
+
+function resolveKnowledgePath(): string {
+  return process.env['VIGILANT_KNOWLEDGE_DB_PATH'] ?? KNOWLEDGE_DB_PATH;
+}
+
 /** Opens state.db and runs migrations. Returns the same instance on subsequent calls. */
 export function getStateDb(): Database.Database {
   if (_stateDb) return _stateDb;
-  ensureDir();
-  _stateDb = new Database(STATE_DB_PATH);
+  const dbPath = resolveStatePath();
+  if (dbPath !== ':memory:') {
+    const dir = dbPath.includes('/') ? dbPath.slice(0, dbPath.lastIndexOf('/')) : VIGILANT_DIR;
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true, mode: 0o700 });
+  }
+  _stateDb = new Database(dbPath);
   _stateDb.pragma('journal_mode = WAL');
   _stateDb.pragma('foreign_keys = ON');
   _stateDb.exec(STATE_SCHEMA);
@@ -107,11 +119,26 @@ export function getStateDb(): Database.Database {
 /** Opens knowledge.db and runs migrations. Returns the same instance on subsequent calls. */
 export function getKnowledgeDb(): Database.Database {
   if (_knowledgeDb) return _knowledgeDb;
-  ensureDir();
-  _knowledgeDb = new Database(KNOWLEDGE_DB_PATH);
+  const dbPath = resolveKnowledgePath();
+  if (dbPath !== ':memory:') {
+    const dir = dbPath.includes('/') ? dbPath.slice(0, dbPath.lastIndexOf('/')) : VIGILANT_DIR;
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true, mode: 0o700 });
+  }
+  _knowledgeDb = new Database(dbPath);
   _knowledgeDb.pragma('journal_mode = WAL');
   _knowledgeDb.exec(KNOWLEDGE_SCHEMA);
   return _knowledgeDb;
+}
+
+/**
+ * Closes both DB connections and resets the singletons.
+ * Use ONLY in tests to get a fresh isolated DB per test.
+ */
+export function resetDbForTesting(): void {
+  _stateDb?.close();
+  _knowledgeDb?.close();
+  _stateDb     = null;
+  _knowledgeDb = null;
 }
 
 function ensureDir(): void {
@@ -119,3 +146,6 @@ function ensureDir(): void {
     mkdirSync(VIGILANT_DIR, { recursive: true, mode: 0o700 });
   }
 }
+
+// Keep ensureDir for any future direct callers
+void ensureDir;
