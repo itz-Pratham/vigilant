@@ -9,6 +9,7 @@ import { activeSessionExists, listSessionsByStage } from '../db/queries/sessions
 import { resolveActivePacks } from '../agent/domain-context.js';
 import { startAgentSession, resumeSession } from '../agent/index.js';
 import { enqueueGate, reQueuePendingGates } from '../hitl/index.js';
+import { dispatchExecutor }                from '../executor/index.js';
 import { info, warn, error as logError, debug } from '../lib/logger.js';
 import {
   WATCHER_POLL_INTERVAL_SECONDS,
@@ -78,6 +79,11 @@ export async function startDaemon(opts: {
     try {
       const summary = await runTick({ owner, repo: name, activePacks, config });
       logTickSummary(summary);
+
+      // Advance executor steps and poll CI for all pending sessions
+      await dispatchExecutor().catch(err =>
+        logError('Executor dispatch failed', 'daemon', err as Record<string, unknown>),
+      );
 
       if (summary.totalIssuesFound === 0) {
         consecutiveIdleTicks++;

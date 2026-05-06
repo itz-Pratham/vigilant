@@ -25,7 +25,13 @@ Pluggable domain packs (payments, security, reliability, compliance) make it rel
 1. **The AI (Copilot / Claude / any agent) must never `git commit` or `git push`** — it may create files, edit files, and `git add` (stage) changes, but committing and pushing is always the developer's responsibility
 2. **The AI must not run `npm publish` or any deployment command** without explicit instruction from the developer
 3. Before making any multi-file change, the AI must state its plan and wait for acknowledgement
-4. **After completing each phase**, when the work is staged and ready to push, the AI must always provide a commit message in the following format:
+4. **Read `AGENT.md` at the start of every prompt** before writing any code — mandatory for memory refreshment and to ensure all rules are applied consistently
+5. **Every feature must be accompanied by tests** — for every new feature or module added, the AI must write:
+   - Unit tests covering individual functions, edge cases, and error paths
+   - At least one integration test that exercises the end-to-end flow through that feature
+   - Tests live in `tests/unit/` and `tests/integration/` respectively
+   - All tests must pass (`npm test`) before the work is considered done
+6. **After completing each phase**, when the work is staged and ready to push, the AI must always provide a commit message in the following format:
 
 ```
 feat(phase-N): <one-line summary>
