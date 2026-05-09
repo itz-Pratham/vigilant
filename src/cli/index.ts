@@ -78,12 +78,13 @@ program
 // ── serve ─────────────────────────────────────────────────────────────────────
 program
   .command('serve')
-  .description('Start the MCP server for Cursor / Claude Code integration.')
+  .description('Start the MCP server for Cursor / Claude Code / Claude Desktop integration.')
   .option('-p, --port <port>', 'Port to listen on. Default: 3741')
   .option('-H, --host <host>', 'Host to bind to. Default: 127.0.0.1')
+  .option('--stdio', 'Use stdio transport instead of HTTP (for Claude Desktop)')
   .action(async (opts) => {
     const { startMcpServer } = await import('../mcp/server.js');
-    await startMcpServer(opts as { port?: string; host?: string });
+    await startMcpServer(opts as { port?: string; host?: string; stdio?: boolean });
   });
 
 // ── config ────────────────────────────────────────────────────────────────────
