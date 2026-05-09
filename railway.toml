@@ -4,10 +4,10 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 restartPolicyType = "ALWAYS"
-startCommand = "node dist/bin.js start -r $VIGILANT_REPO --domain $VIGILANT_DOMAIN --interval 120"
+startCommand = "sh start.sh"
 
-# Required env vars — set these in Railway dashboard → Variables:
+# Required env vars — set in Railway dashboard → Variables:
 #   VIGILANT_GITHUB_TOKEN   — GitHub PAT (Contents R/W, Pull requests R/W, Issues R/W)
 #   VIGILANT_GEMINI_API_KEY — Google Gemini API key (free at aistudio.google.com)
 #   VIGILANT_REPO           — repo to watch, e.g. "itz-Pratham/vigilant"
-#   VIGILANT_DOMAIN         — payments | security | reliability | compliance
+#   VIGILANT_DOMAIN         — payments | security | reliability | compliance (default: payments)
