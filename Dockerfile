@@ -24,6 +24,7 @@ RUN npm ci --omit=dev --ignore-scripts
 # Compiled output + knowledge seeds
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/knowledge ./knowledge
+COPY start.sh ./
 
 # SQLite DBs stored in /app/data (Railway Volumes can be mounted here if needed)
 RUN mkdir -p /app/data
