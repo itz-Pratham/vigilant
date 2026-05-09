@@ -2,6 +2,7 @@
 // Serialises Gate 1 and Gate 2 prompts — only one prompt displayed at a time.
 // Multiple sessions reaching a gate stage simultaneously are queued FIFO.
 
+import { getStateDb }          from '../db/index.js';
 import { getSession }          from '../db/queries/sessions.js';
 import { info, warn }          from '../lib/logger.js';
 import { gateOne }             from './plan-approval.js';
@@ -33,7 +34,6 @@ export function enqueueGate(sessionId: string, gate: 1 | 2): void {
  * Call once at daemon startup after database is ready.
  */
 export function reQueuePendingGates(): void {
-  const { getStateDb } = require('../db/index.js') as { getStateDb: () => { prepare: (sql: string) => { all: () => unknown[] } } };
   const rows = getStateDb().prepare(`
     SELECT session_id, stage FROM agent_sessions
     WHERE stage IN ('awaiting_approval', 'awaiting_merge')
