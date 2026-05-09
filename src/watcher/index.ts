@@ -57,6 +57,14 @@ export async function startDaemon(opts: {
   console.log(chalk.dim(`  Interval: ${intervalSeconds}s`));
   console.log(chalk.dim(`  Press Ctrl+C to stop\n`));
 
+  // Load domain knowledge seeds into the RAG knowledge base (idempotent)
+  try {
+    const { loadAllDomainSeeds } = await import('../agent/seed-loader.js');
+    loadAllDomainSeeds(activePacks);
+  } catch (err: unknown) {
+    warn('Failed to load domain seeds — continuing without seeds', '[watcher]');
+  }
+
   // Resume any interrupted sessions from a previous run
   await resumeInterruptedSessions();
   // Re-queue sessions that were at a gate when the daemon last stopped
