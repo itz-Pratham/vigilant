@@ -1,5 +1,5 @@
 {
-  "name": "vigilant",
+  "name": "vigilens",
   "version": "0.1.0",
   "description": "Autonomous GitHub code guardian — watches repos, finds issues, writes fixes, opens PRs.",
   "keywords": [
@@ -7,12 +7,15 @@
     "ai",
     "github",
     "code-quality",
-    "autonomous-agent"
+    "autonomous-agent",
+    "code-review",
+    "sentinel"
   ],
   "license": "MIT",
   "type": "module",
   "bin": {
-    "vigilant": "./dist/bin.js"
+    "vigilant": "dist/bin.js",
+    "vigilens": "dist/bin.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
