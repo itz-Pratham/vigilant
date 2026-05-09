@@ -1,0 +1,16 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Set these in the Railway dashboard → Variables:
+#   VIGILANT_GITHUB_TOKEN   — GitHub personal access token (repo + PR scope)
+#   VIGILANT_GEMINI_API_KEY — Google Gemini API key
+#   VIGILANT_REPO           — e.g. "yourname/your-repo"
+#   VIGILANT_DOMAIN         — payments | security | reliability | compliance
+#
+# The start command is wired in [deploy] startCommand below:
+startCommand = "node dist/bin.js start -r $VIGILANT_REPO --domain $VIGILANT_DOMAIN --interval 120"

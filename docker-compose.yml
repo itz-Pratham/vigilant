@@ -1,0 +1,24 @@
+services:
+  vigilant:
+    build: .
+    image: vigilant:local
+    restart: unless-stopped
+    volumes:
+      - vigilant-data:/data
+    environment:
+      - VIGILANT_GITHUB_TOKEN=${VIGILANT_GITHUB_TOKEN}
+      - VIGILANT_GEMINI_API_KEY=${VIGILANT_GEMINI_API_KEY}
+      - VIGILANT_DB_PATH=/data/vigilant.db
+      - VIGILANT_KNOWLEDGE_DB_PATH=/data/knowledge.db
+    # Override CMD to watch your repo — edit REPO and DOMAIN below:
+    command:
+      - start
+      - -r
+      - ${VIGILANT_REPO:-itz-Pratham/vigilant}
+      - --domain
+      - ${VIGILANT_DOMAIN:-payments}
+      - --interval
+      - "120"
+
+volumes:
+  vigilant-data:
