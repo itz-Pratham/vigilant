@@ -10,6 +10,7 @@ import { resolveActivePacks } from '../agent/domain-context.js';
 import { startAgentSession, resumeSession } from '../agent/index.js';
 import { enqueueGate, reQueuePendingGates } from '../hitl/index.js';
 import { dispatchExecutor }                from '../executor/index.js';
+import { runLearner, isLearnerInFlight }  from '../learner/index.js';
 import { info, warn, error as logError, debug } from '../lib/logger.js';
 import {
   WATCHER_POLL_INTERVAL_SECONDS,
@@ -88,8 +89,15 @@ export async function startDaemon(opts: {
       if (summary.totalIssuesFound === 0) {
         consecutiveIdleTicks++;
         if (consecutiveIdleTicks >= LEARNER_IDLE_TICKS_TRIGGER) {
-          debug(`${consecutiveIdleTicks} idle ticks — triggering learner (Phase 6 stub)`, 'daemon');
           consecutiveIdleTicks = 0;
+          if (!isLearnerInFlight()) {
+            debug('Idle tick threshold reached — firing learner', 'daemon');
+            runLearner({}).catch(err =>
+              warn('Background learner job failed', 'daemon', err as Record<string, unknown>),
+            );
+          } else {
+            debug('Idle tick threshold reached but learner already in flight — skipping', 'daemon');
+          }
         }
       } else {
         consecutiveIdleTicks = 0;

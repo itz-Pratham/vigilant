@@ -113,6 +113,10 @@ export function getStateDb(): Database.Database {
   _stateDb.pragma('journal_mode = WAL');
   _stateDb.pragma('foreign_keys = ON');
   _stateDb.exec(STATE_SCHEMA);
+  // Phase 6 migration: add source_type column to learning_topics (no-op if already present)
+  try {
+    _stateDb.exec(`ALTER TABLE learning_topics ADD COLUMN source_type TEXT NOT NULL DEFAULT 'github_prs'`);
+  } catch { /* column already exists — safe to ignore */ }
   return _stateDb;
 }
 
