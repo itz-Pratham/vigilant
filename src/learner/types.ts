@@ -53,4 +53,6 @@ export type LearnerOptions = {
    * 'repo:owner/name' = scoped to one repo (used by `vigilant learn --repo`).
    */
   scope?:         string;
+  /** Gemini API key — passed explicitly so NeuroLink doesn't need GOOGLE_AI_API_KEY in env. */
+  geminiApiKey?:  string;
 };

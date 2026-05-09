@@ -53,7 +53,9 @@ export async function runLearner(opts: LearnerOptions = {}): Promise<ResearchRes
 
     info(`Learner starting: "${effectiveTopic.topic}" (${effectiveTopic.sourceType}) [${effectiveTopic.domain}]`, 'learner');
 
-    const neurolink = new NeuroLink();
+    const neurolink = opts.geminiApiKey
+      ? new NeuroLink({ credentials: { googleAiStudio: { apiKey: opts.geminiApiKey } } })
+      : new NeuroLink();
     let docs: ResearchDocument[] = [];
 
     switch (effectiveTopic.sourceType) {
@@ -98,12 +100,15 @@ export async function runLearner(opts: LearnerOptions = {}): Promise<ResearchRes
  * Accepts explicit topic/domain/repo options and prints a human-readable summary.
  */
 export async function runLearnJob(opts: { topic?: string; domain?: string; repo?: string }): Promise<void> {
+  const { loadConfig } = await import('../config/index.js');
+  const config = loadConfig();
   const scope = opts.repo ? `repo:${opts.repo}` : 'global';
 
   const result = await runLearner({
     topicOverride: opts.topic,
     domain:        opts.domain,
     scope,
+    geminiApiKey:  config.geminiApiKey,
   });
 
   if (result.topic === 'skipped') {

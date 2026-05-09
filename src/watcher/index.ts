@@ -100,7 +100,7 @@ export async function startDaemon(opts: {
           consecutiveIdleTicks = 0;
           if (!isLearnerInFlight()) {
             debug('Idle tick threshold reached — firing learner', 'daemon');
-            runLearner({}).catch(err =>
+            runLearner({ geminiApiKey: config.geminiApiKey }).catch(err =>
               warn('Background learner job failed', 'daemon', err as Record<string, unknown>),
             );
           } else {
