@@ -17,9 +17,12 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Production deps only
+# Build tools needed to compile better-sqlite3 native binding on Alpine
+RUN apk add --no-cache python3 make g++
+
+# Production deps only — allow scripts so better-sqlite3 compiles for linux/x64
 COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev
 
 # Compiled output + knowledge seeds
 COPY --from=builder /app/dist ./dist
