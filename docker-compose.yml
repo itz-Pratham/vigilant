@@ -8,8 +8,8 @@ services:
     environment:
       - VIGILANT_GITHUB_TOKEN=${VIGILANT_GITHUB_TOKEN}
       - VIGILANT_GEMINI_API_KEY=${VIGILANT_GEMINI_API_KEY}
-      - VIGILANT_DB_PATH=/data/vigilant.db
-      - VIGILANT_KNOWLEDGE_DB_PATH=/data/knowledge.db
+      - VIGILANT_DB_PATH=/app/data/vigilant.db
+      - VIGILANT_KNOWLEDGE_DB_PATH=/app/data/knowledge.db
     # Override CMD to watch your repo — edit REPO and DOMAIN below:
     command:
       - start

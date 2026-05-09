@@ -25,11 +25,11 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/knowledge ./knowledge
 
-# Persistent data volume for SQLite DBs and config
-VOLUME ["/data"]
+# SQLite DBs stored in /app/data (Railway Volumes can be mounted here if needed)
+RUN mkdir -p /app/data
 
-ENV VIGILANT_DB_PATH=/data/vigilant.db
-ENV VIGILANT_KNOWLEDGE_DB_PATH=/data/knowledge.db
+ENV VIGILANT_DB_PATH=/app/data/vigilant.db
+ENV VIGILANT_KNOWLEDGE_DB_PATH=/app/data/knowledge.db
 ENV NODE_ENV=production
 
 # The start command is supplied at runtime via CMD override or VIGILANT_* env vars.
