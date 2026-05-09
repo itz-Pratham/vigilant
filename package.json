@@ -50,7 +50,8 @@
     "express": "^5.2.1",
     "inquirer": "^9.0.0",
     "minimatch": "^9.0.0",
-    "ora": "^8.0.0"
+    "ora": "^8.0.0",
+    "react": "^19.2.6"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
